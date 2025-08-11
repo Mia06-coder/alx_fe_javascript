@@ -165,15 +165,6 @@ function addQuote(quotes, quote) {
   saveQuotes(quotes);
 }
 
-// Create export to JSON button
-function createExportQuotesToJSONBtn(quotes) {
-  const exportToJsonBtn = document.createElement("button");
-  exportToJsonBtn.textContent = "Export Quotes as JSON";
-  exportToJsonBtn.id = "exportQuotesBtn";
-  exportToJsonBtn.addEventListener("click", () => exportQuotesToJSON(quotes));
-  document.body.appendChild(exportToJsonBtn);
-}
-
 // Export quotes to JSON file
 function exportQuotesToJSON(quotes) {
   if (!quotes || quotes.length === 0) {
@@ -194,26 +185,6 @@ function exportQuotesToJSON(quotes) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }, 100);
-}
-
-// Create import from JSON input
-function createImportQuotesToJSONInput(quotes) {
-  const importInput = document.createElement("input");
-  importInput.type = "file";
-  importInput.id = "importFile";
-  importInput.accept = ".json";
-  importInput.addEventListener("change", () =>
-    importFromJsonFile(event, quotes)
-  );
-
-  // Create styled label acting as the button
-  const importLabel = document.createElement("label");
-  importLabel.htmlFor = "importFile";
-  importLabel.textContent = "Import Quotes (JSON)";
-  importLabel.id = "importLabel";
-
-  document.body.appendChild(importInput);
-  document.body.appendChild(importLabel);
 }
 
 // Import quotes from a selected JSON file
@@ -289,11 +260,23 @@ document.addEventListener("DOMContentLoaded", function () {
     document.body.appendChild(quoteContainer);
   }
 
-  // Create export button
-  createExportQuotesToJSONBtn(quotes);
+  // Set click listener on button to export quotes
+  const exportToJsonBtn = document.getElementById("exportQuotesBtn");
+  if (exportToJsonBtn) {
+    exportToJsonBtn.addEventListener("click", () => exportQuotesToJSON(quotes));
+  } else {
+    console.warn("Export quotes button with id 'exportQuotesBtn' not found.");
+  }
 
-  //Create import input
-  createImportQuotesToJSONInput(quotes);
+  // Set onchange listener on input to import quotes
+  const importInput = document.getElementById("importFile");
+  if (importInput) {
+    importInput.addEventListener("change", () =>
+      importFromJsonFile(event, quotes)
+    );
+  } else {
+    console.warn("Export quotes button with id 'exportQuotesBtn' not found.");
+  }
 
   // Ensure form container exists
   let formContainer = document.getElementById("form-container");
