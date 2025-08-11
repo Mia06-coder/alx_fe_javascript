@@ -1,0 +1,49 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+}
+
+#quoteDisplay {
+  font-size: 1.25rem;
+  margin: 20px 0;
+  padding: 10px;
+  border: 1px solid #ddd;
+  min-height: 50px;
+  max-width: 600px;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+#form-container form {
+  margin-top: 50px;
+}
+#form-container input {
+  margin: 5px 10px 5px 0;
+  padding: 6px;
+  font-size: 1rem;
+  border: 1px solid;
+  border-radius: 4px;
+}
+button {
+  padding: 6px 12px;
+  font-size: 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+#newQuote {
+  background-color: #178e86;
+  color: white;
+  border: 1px solid #178e86;
+}
+#newQuote:hover {
+  background-color: #037870;
+}
+
+#form-container button {
+  background-color: #7474f1;
+  color: white;
+  border: 1px solid #7474f1;
+}
+#form-container button:hover {
+  background-color: #6666fc;
+}
