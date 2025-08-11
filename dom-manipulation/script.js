@@ -1,5 +1,6 @@
 const QUOTES_KEY = "quotes";
 const LAST_VIEWED_QUOTE_KEY = "lastViewedQuote";
+const LAST_SELECTED_CATEGORY = "lastSelectedCategory";
 
 // Default quotes to load if nothing is in localStorage
 const defaultQuotes = [
@@ -139,6 +140,8 @@ function createAddQuoteForm(quotes) {
     }
 
     addQuote(quotes, newQuote);
+    populateCategories(quotes);
+    showRandomQuote(filterQuotes(quotes));
     form.reset();
   });
 
@@ -197,7 +200,7 @@ function importFromJsonFile(event, quotes) {
 
   const fileReader = new FileReader();
 
-  fileReader.onload = function (e) {
+  fileReader.onload = (e) => {
     try {
       const importedQuotes = JSON.parse(e.target.result);
 
@@ -227,7 +230,8 @@ function importFromJsonFile(event, quotes) {
       saveQuotes(quotes);
 
       // Update the UI (e.g., refresh displayed quote)
-      showRandomQuote(quotes);
+      populateCategories(quotes);
+      showRandomQuote(filterQuotes(quotes));
 
       alert(`Successfully imported ${validQuotes.length} quotes!`);
     } catch (error) {
@@ -247,10 +251,40 @@ function importFromJsonFile(event, quotes) {
   fileReader.readAsText(file);
 }
 
+function populateCategories(quotes) {
+  const categoryFilter = document.getElementById("categoryFilter");
+  if (!categoryFilter) {
+    console.error("Category filter select element not found");
+    return;
+  }
+
+  const categories = ["all", ...new Set(quotes.map((q) => q.category))];
+  categoryFilter.innerHTML = categories
+    .map((cat) => `<option value="${cat}">${cat}</option>`)
+    .join("");
+
+  // Restore last selected category from localStorage if available
+  const lastCategory = localStorage.getItem(LAST_SELECTED_CATEGORY);
+  if (lastCategory && categories.includes(lastCategory)) {
+    categoryFilter.value = lastCategory;
+  } else {
+    categoryFilter.value = "all";
+  }
+}
+
+function filterQuotes(quotes) {
+  const category = document.getElementById("categoryFilter")?.value || "all";
+  localStorage.setItem(LAST_SELECTED_CATEGORY, category); // Save the filter selection to localStorage
+
+  return category === "all"
+    ? quotes
+    : quotes.filter((q) => q.category === category);
+}
+
 // Initial setup on DOM load
 document.addEventListener("DOMContentLoaded", function () {
   // Load quotes from localStorage or defaults
-  const quotes = loadQuotes();
+  let quotes = loadQuotes();
 
   // Ensure quote display container exists
   let quoteContainer = document.getElementById("quoteDisplay");
@@ -258,6 +292,47 @@ document.addEventListener("DOMContentLoaded", function () {
     quoteContainer = document.createElement("div");
     quoteContainer.id = "quoteDisplay";
     document.body.appendChild(quoteContainer);
+  }
+
+  // Ensure form container exists
+  let formContainer = document.getElementById("form-container");
+  if (!formContainer) {
+    formContainer = document.createElement("div");
+    formContainer.id = "form-container";
+    document.body.appendChild(formContainer);
+  }
+
+  // Populate category dropdown
+  populateCategories(quotes);
+
+  let filteredQuotes = filterQuotes(quotes);
+
+  const categorySelect = document.getElementById("categoryFilter");
+  if (categorySelect) {
+    categorySelect.addEventListener("change", () => {
+      filteredQuotes = filterQuotes(quotes);
+      showRandomQuote(filteredQuotes);
+    });
+  }
+
+  // Update quote display with last viewed or random filtered quote
+  function updateQuoteDisplay() {
+    const lastQuote = loadLastViewedQuote();
+    if (lastQuote) {
+      displayQuote(lastQuote);
+    } else {
+      showRandomQuote(filteredQuotes);
+    }
+  }
+
+  // Set click listener on button to show new random quote
+  const showQuoteBtn = document.getElementById("newQuote");
+  if (showQuoteBtn) {
+    showQuoteBtn.addEventListener("click", () =>
+      showRandomQuote(filteredQuotes)
+    );
+  } else {
+    console.warn("Show quote button with id 'newQuote' not found.");
   }
 
   // Set click listener on button to export quotes
@@ -271,37 +346,11 @@ document.addEventListener("DOMContentLoaded", function () {
   // Set onchange listener on input to import quotes
   const importInput = document.getElementById("importFile");
   if (importInput) {
-    importInput.addEventListener("change", () =>
+    importInput.addEventListener("change", (event) =>
       importFromJsonFile(event, quotes)
     );
   } else {
-    console.warn("Export quotes button with id 'exportQuotesBtn' not found.");
-  }
-
-  // Ensure form container exists
-  let formContainer = document.getElementById("form-container");
-  if (!formContainer) {
-    formContainer = document.createElement("div");
-    formContainer.id = "form-container";
-    document.body.appendChild(formContainer);
-  }
-
-  // Update the quote display (from last viewed or random)
-  function updateQuoteDisplay() {
-    const lastQuote = loadLastViewedQuote();
-    if (lastQuote) {
-      displayQuote(lastQuote);
-    } else {
-      showRandomQuote(quotes);
-    }
-  }
-
-  // Set click listener on button to show new random quote
-  const showQuoteBtn = document.getElementById("newQuote");
-  if (showQuoteBtn) {
-    showQuoteBtn.addEventListener("click", () => showRandomQuote(quotes));
-  } else {
-    console.warn("Show quote button with id 'newQuote' not found.");
+    console.warn("Import quotes input with id 'importFile' not found.");
   }
 
   // Initially display a random quote

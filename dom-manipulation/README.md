@@ -23,6 +23,7 @@ This project demonstrates core front-end concepts including **DOM manipulation**
 
 ![Screenshot](./assets/images/image1.png)
 ![Screenshot](./assets/images/image2.png)
+![Screenshot](./assets/images/image3.png)
 
 ---
 

@@ -21,11 +21,18 @@ body {
   margin: 5px 10px 5px 0;
   padding: 6px;
   font-size: 1rem;
-  border: 2px solid;
+  border: 2px solid #ccc;
   border-radius: 4px;
 }
+
+#form-container input:focus {
+  outline: none;
+  border-color: #7474f1;
+}
+
 button,
-#importLabel {
+#importLabel,
+#categoryFilter {
   padding: 6px 12px;
   font-size: 1rem;
   border: 2px solid;
@@ -77,4 +84,21 @@ button,
 
 #importLabel:hover {
   background-color: #034e9e;
+}
+
+#categoryFilter {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  background-color: white;
+  border-color: #ccc;
+}
+
+#categoryFilter:hover {
+  border-color: #888;
+}
+
+#categoryFilter:focus {
+  outline: none;
+  border-color: #007bff;
+  background-color: #f0f8ff;
 }
