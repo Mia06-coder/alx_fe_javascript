@@ -15,7 +15,7 @@ const quotes = [
 ];
 
 // Function to display a random quote in the quoteDisplay element
-function displayRandomQuote() {
+function showRandomQuote() {
   const quoteContainer = document.getElementById("quoteDisplay");
   if (!quoteContainer) {
     console.error("Quote display container not found.");
@@ -87,7 +87,7 @@ function createAddQuoteForm() {
     }
 
     addQuote(newQuote);
-    displayRandomQuote();
+    showRandomQuote();
     form.reset();
   });
 
@@ -134,12 +134,12 @@ document.addEventListener("DOMContentLoaded", function () {
   // Set up the button to show a new random quote
   const showQuoteBtn = document.getElementById("newQuote");
   if (showQuoteBtn) {
-    showQuoteBtn.addEventListener("click", displayRandomQuote);
+    showQuoteBtn.addEventListener("click", showRandomQuote);
   } else {
     console.warn("Show quote button with id 'newQuote' not found.");
   }
 
   // Display a random quote initially and create the add quote form
-  displayRandomQuote();
+  showRandomQuote();
   createAddQuoteForm();
 });
