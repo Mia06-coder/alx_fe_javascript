@@ -21,29 +21,60 @@ body {
   margin: 5px 10px 5px 0;
   padding: 6px;
   font-size: 1rem;
-  border: 1px solid;
+  border: 2px solid;
   border-radius: 4px;
 }
-button {
+button,
+#importLabel {
   padding: 6px 12px;
   font-size: 1rem;
+  border: 2px solid;
   border-radius: 4px;
   cursor: pointer;
 }
 #newQuote {
   background-color: #178e86;
   color: white;
-  border: 1px solid #178e86;
+  border-color: #178e86;
 }
 #newQuote:hover {
   background-color: #037870;
 }
 
+#exportQuotesBtn {
+  background-color: white;
+  color: #178e86;
+  border-color: #178e86;
+}
+
+#exportQuotesBtn:hover {
+  background-color: #178e86;
+  color: white;
+}
+
 #form-container button {
   background-color: #7474f1;
   color: white;
-  border: 1px solid #7474f1;
+  border-color: #7474f1;
 }
 #form-container button:hover {
   background-color: #6666fc;
+}
+
+#importFile {
+  display: none;
+}
+
+#importLabel {
+  background-color: #007bff;
+  color: white;
+  display: inline-block;
+  padding: 8px 12px;
+  margin-left: 5px;
+  font-weight: bold;
+  user-select: none;
+}
+
+#importLabel:hover {
+  background-color: #034e9e;
 }
