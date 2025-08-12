@@ -361,7 +361,7 @@ async function postQuotesToServer(quote) {
 }
 
 // Periodically fetch updates every 30 seconds
-function startServerSync(quotes) {
+function syncQuotes(quotes) {
   setInterval(async () => {
     console.log("Checking server for updates...");
     const serverQuotes = await fetchQuotesFromServer();
@@ -384,6 +384,7 @@ function startServerSync(quotes) {
   }, 30000); // every 30s
 }
 
+// Give server quotes precedance on merge
 function mergeWithServerPrecedence(localQuotes, serverQuotes) {
   const sanitizedLocal = localQuotes.map(sanitizeQuote);
   const sanitizedServer = serverQuotes.map(sanitizeQuote);
@@ -466,5 +467,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   );
 
   // Start simulated real-time updates
-  startServerSync(quotes);
+  syncQuotes(quotes);
 });
