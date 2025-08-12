@@ -167,9 +167,9 @@ async function addQuote(quotes, quote) {
 
   try {
     // Post to simulated server
-    const serverres = await postQuotesToServer(quote);
+    const server_res = await postQuotesToServer(quote);
 
-    quotes.push(serverres);
+    quotes.push(server_res);
     alert("Quote added successfully (and sent to server)!");
   } catch (error) {
     console.error("Failed to post to server:", error);
@@ -203,13 +203,13 @@ function exportQuotesToJSON(quotes) {
 }
 
 // Import quotes from a selected JSON file
-function importFromJsonFile(event, quotes) {
+async function importFromJsonFile(event, quotes) {
   const file = event.target.files[0];
   if (!file) return alert("No file selected.");
 
   const fileReader = new FileReader();
 
-  fileReader.onload = (e) => {
+  fileReader.onload = async (e) => {
     try {
       const importedQuotes = JSON.parse(e.target.result);
 
@@ -222,8 +222,22 @@ function importFromJsonFile(event, quotes) {
       if (validQuotes.length === 0)
         return alert("No valid quotes found in the imported file.");
 
-      // Append valid quotes to the existing quotes array
-      quotes = mergeQuotes(quotes, validQuotes);
+      // Post each imported quote to server
+      for (const quote of validQuotes) {
+        try {
+          const serverRes = await postQuotesToServer(quote);
+          quotes.push(serverRes);
+        } catch (err) {
+          console.error("Failed to post imported quote to server:", quote, err);
+          // fallback: add locally if server fails
+          quotes.push(quote);
+        }
+      }
+
+      // Remove duplicates after adding all
+      const merged = mergeQuotes(quotes, []);
+      quotes.length = 0; // clear current array
+      quotes.push(...merged);
 
       // Save updated quotes to localStorage
       saveQuotes(quotes);
@@ -319,7 +333,7 @@ function createAddQuoteForm(quotes) {
 // Simulate server fetch using JSONPlaceholder
 async function fetchQuotesFromServer() {
   try {
-    const res = await fetch(`${SERVER_API_URL}?_limit=5`);
+    const res = await fetch(SERVER_API_URL);
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
     const data = await res.json();
@@ -353,12 +367,38 @@ function startServerSync(quotes) {
     const serverQuotes = await fetchQuotesFromServer();
 
     if (serverQuotes.length > 0) {
-      quotes = mergeQuotes(quotes, serverQuotes);
+      console.log(
+        "Merging server quotes with local quotes (server precedence)..."
+      );
+
+      // Merge with server taking precedence
+      const merged = mergeWithServerPrecedence(quotes, serverQuotes);
+      quotes.length = 0;
+      quotes.push(...merged);
+
       saveQuotes(quotes);
       populateCategories(quotes);
-      console.log("Quotes updated from server");
+      showRandomQuote(filterQuotes(quotes)); // refresh UI after sync
+      console.log("Quotes updated from server with server precedence");
     }
   }, 30000); // every 30s
+}
+
+function mergeWithServerPrecedence(localQuotes, serverQuotes) {
+  const sanitizedLocal = localQuotes.map(sanitizeQuote);
+  const sanitizedServer = serverQuotes.map(sanitizeQuote);
+
+  const localMap = new Map(
+    sanitizedLocal.map((q) => [`${q.text}|${q.category}`, q])
+  );
+
+  // Server overwrites local on matching keys
+  sanitizedServer.forEach((sq) => {
+    const key = `${sq.text}|${sq.category}`;
+    localMap.set(key, sq);
+  });
+
+  return deduplicateQuotes(Array.from(localMap.values()));
 }
 
 // ========================
@@ -372,7 +412,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Fetch initial quotes from server and merge
   const serverQuotes = await fetchQuotesFromServer();
   if (serverQuotes.length > 0) {
-    quotes = mergeQuotes(quotes, serverQuotes);
+    const merged = mergeWithServerPrecedence(quotes, serverQuotes);
+    quotes.length = 0;
+    quotes.push(...merged);
     saveQuotes(quotes);
   }
 
