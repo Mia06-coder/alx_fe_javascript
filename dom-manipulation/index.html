@@ -18,6 +18,15 @@
     <label for="importFile" id="importLabel">Import Quotes</label>
     <input type="file" name="importFile" id="importFile" accept=".json" />
     <div id="form-container"></div>
+
+    <div id="conflictModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <h2>Data Conflicts Detected</h2>
+        <div id="conflictList"></div>
+        <button id="resolveConflictsBtn">Resolve Conflicts</button>
+      </div>
+    </div>
+
     <script src="script.js"></script>
   </body>
 </html>

@@ -367,19 +367,41 @@ function syncQuotes(quotes) {
     const serverQuotes = await fetchQuotesFromServer();
 
     if (serverQuotes.length > 0) {
-      console.log(
-        "Merging server quotes with local quotes (server precedence)..."
-      );
+      const conflicts = findConflicts(quotes, serverQuotes);
+      if (conflicts.length > 0) {
+        // Show modal to user for manual resolution
+        showConflictModal(conflicts, (resolvedQuotes) => {
+          // Remove conflicted local quotes (match text & category) first
+          const conflictTexts = conflicts.map(
+            (c) => `${c.local.text}|${c.local.category}`
+          );
+          const filteredLocal = quotes.filter(
+            (q) => !conflictTexts.includes(`${q.text}|${q.category}`)
+          );
 
-      // Merge with server taking precedence
-      const merged = mergeWithServerPrecedence(quotes, serverQuotes);
-      quotes.length = 0;
-      quotes.push(...merged);
+          // Add resolved quotes
+          const merged = mergeQuotes(filteredLocal, resolvedQuotes);
 
-      saveQuotes(quotes);
-      populateCategories(quotes);
-      showRandomQuote(filterQuotes(quotes)); // refresh UI after sync
-      console.log("Quotes updated from server with server precedence");
+          quotes.length = 0;
+          quotes.push(...merged);
+
+          saveQuotes(quotes);
+          populateCategories(quotes);
+          showRandomQuote(filterQuotes(quotes));
+
+          notifyUser("Conflicts resolved and quotes updated.");
+        });
+      } else {
+        // No conflicts, merge silently
+        const merged = mergeWithServerPrecedence(quotes, serverQuotes);
+        quotes.length = 0;
+        quotes.push(...merged);
+        saveQuotes(quotes);
+        populateCategories(quotes);
+        showRandomQuote(filterQuotes(quotes));
+        console.log("Quotes updated from server with server precedence");
+      }
+      console.log("Quotes synced with server!");
     }
   }, 30000); // every 30s
 }
@@ -389,17 +411,106 @@ function mergeWithServerPrecedence(localQuotes, serverQuotes) {
   const sanitizedLocal = localQuotes.map(sanitizeQuote);
   const sanitizedServer = serverQuotes.map(sanitizeQuote);
 
-  const localMap = new Map(
-    sanitizedLocal.map((q) => [`${q.text}|${q.category}`, q])
-  );
+  // Use Map keyed by quote text only (category may differ)
+  const localMap = new Map(sanitizedLocal.map((q) => [q.text, q]));
 
   // Server overwrites local on matching keys
   sanitizedServer.forEach((sq) => {
-    const key = `${sq.text}|${sq.category}`;
-    localMap.set(key, sq);
+    localMap.set(sq.text, sq);
   });
 
+  // Return deduplicated by text & category (to avoid duplicates)
   return deduplicateQuotes(Array.from(localMap.values()));
+}
+
+// ========================
+// Conflict Finder
+// ========================
+
+function findConflicts(localQuotes, serverQuotes) {
+  const conflicts = [];
+
+  serverQuotes.forEach((serverQuote) => {
+    const localMatch = localQuotes.find(
+      (localQuote) => localQuote.text === serverQuote.text
+    );
+
+    if (localMatch) {
+      // Only consider it a conflict if category is different
+      if (localMatch.category !== serverQuote.category) {
+        conflicts.push({
+          type: "conflict",
+          server: serverQuote,
+          local: localMatch,
+        });
+      }
+    }
+  });
+
+  return conflicts;
+}
+
+// ========================
+// Conflict Resolver (User Choice)
+// ========================
+// Show modal with conflicts
+function showConflictModal(conflicts, onResolve) {
+  const modal = document.getElementById("conflictModal");
+  const conflictList = document.getElementById("conflictList");
+  conflictList.innerHTML = "";
+
+  conflicts.forEach(({ local, server }, index) => {
+    const conflictDiv = document.createElement("div");
+    conflictDiv.className = "conflict-item";
+    conflictDiv.innerHTML = `
+      <p><strong>Conflict #${index + 1}</strong></p>
+      <div class="conflict-versions">
+        <div>
+          <h4>Local Version</h4>
+          <p>"${local.text}" (${local.category})</p>
+          <label><input type="radio" name="conflict-${index}" value="local" checked> Keep Local</label>
+        </div>
+        <div>
+          <h4>Server Version</h4>
+          <p>"${server.text}" (${server.category})</p>
+          <label><input type="radio" name="conflict-${index}" value="server"> Keep Server</label>
+        </div>
+      </div>
+    `;
+    conflictList.appendChild(conflictDiv);
+  });
+
+  modal.style.display = "flex";
+
+  document.getElementById("resolveConflictsBtn").onclick = async () => {
+    const resolvedQuotes = [];
+    conflicts.forEach(({ local, server }, index) => {
+      const choice = document.querySelector(
+        `input[name="conflict-${index}"]:checked`
+      ).value;
+      resolvedQuotes.push(choice === "local" ? local : server);
+    });
+
+    modal.style.display = "none"; // Hide modal
+
+    try {
+      // Send each resolved quote to the server to update it
+      for (const quote of resolvedQuotes) {
+        await postQuotesToServer(quote);
+      }
+    } catch (error) {
+      console.error("Failed to update resolved quotes to server:", error);
+      alert("Warning: Could not sync resolved quotes with server.");
+    }
+
+    console.log(resolvedQuotes);
+    onResolve(resolvedQuotes);
+  };
+}
+
+function notifyUser(message) {
+  // Simple notification (you can enhance with styled toasts)
+  alert(message);
 }
 
 // ========================
@@ -463,7 +574,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Update quote display with last viewed or random filtered quote
   displayQuote(
     loadLastViewedQuote() ||
-      filteredQuotes[Math.floor(Math.random() * filterQuotes.length)]
+      filteredQuotes[Math.floor(Math.random() * filteredQuotes.length)]
   );
 
   // Start simulated real-time updates
